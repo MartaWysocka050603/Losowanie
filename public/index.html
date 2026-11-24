@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Losowanie prezentów</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#16090c);--ink:light-dark(#24151a,#f7eaea);--mut:light-dark(#6f5a60,#c6aeb3);
+--red:light-dark(#8e1b2c,#4d0f1a);--red2:light-dark(#a8263a,#7a1a2c);--gold:#f2c14e;
+--card:light-dark(#ffffff,#211015);--line:light-dark(#ecdfe1,#3d242b);--field:light-dark(#fbf6f6,#2a1519);
+--paper:light-dark(#fff4d4,#33250f);--who:light-dark(#8e1b2c,#ffb3bf);--ok:light-dark(#2f8a57,#7fd3a3)}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Rubik,system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(28px,4vw,56px) max(5vw,16px)}
+.top{background:var(--red);color:#fff;text-align:center;padding-bottom:36px}
+h1{font:700 clamp(36px,9vw,52px)/1.05 Rubik,sans-serif;margin:0 0 10px;text-wrap:balance}
+.lead{max-width:32em;margin:0 auto;color:#fbe6e9;text-wrap:pretty}
+.pill{display:inline-block;margin-top:12px;padding:6px 14px;border-radius:999px;background:var(--gold);color:#3a1a00;font-weight:700;white-space:nowrap}
+.machine{max-width:320px;margin:20px auto 4px}
+.machine svg{display:block;width:100%;height:auto;overflow:visible}
+#balls{transform-origin:160px 128px;transform-box:view-box}
+#balls text{font-family:Rubik,sans-serif}
+.spin #balls{animation:tumble 1.8s cubic-bezier(.45,0,.2,1)}
+@keyframes tumble{to{transform:rotate(1080deg)}}
+@media (prefers-reduced-motion:reduce){.spin #balls{animation:none}}
+.status{font-weight:500;font-size:17px;margin:8px 0 16px}
+.cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px;border-radius:999px;font:500 16px Rubik,sans-serif;border:0;cursor:pointer;text-decoration:none}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,.person:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.gold{background:var(--gold);color:#3a1a00;font-weight:700}
+.big{min-height:56px;font-size:18px;padding:0 36px}
+.primary{background:var(--red2);color:#fff}
+.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.wide{width:100%}
+main{max-width:640px;margin:0 auto}
+main .band{padding-block:28px 8px}
+h2{font:700 26px/1.15 Rubik,sans-serif;margin:0 0 6px}
+h3{font:700 22px/1.2 Rubik,sans-serif;margin:0 0 8px}
+.mut{color:var(--mut);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.person{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:16px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);text-align:left;cursor:pointer;font:inherit;min-height:64px}
+.person:hover{border-color:var(--gold)}
+.ball{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#3a0d16;border:1.5px solid rgba(0,0,0,.12);box-shadow:inset -4px -5px 0 rgba(0,0,0,.1)}
+.waiting .ball{opacity:.35}
+.pi{display:flex;flex-direction:column}
+.nm{font:700 25px/1.05 Caveat,cursive}
+.st{font-size:14px;color:var(--mut)}
+.st.ok{color:var(--ok);font-weight:500}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+label{display:block;font-weight:500;margin-bottom:14px}
+input,select{display:block;width:100%;min-height:48px;margin-top:6px;padding:10px 14px;font:16px Rubik,sans-serif;border:1.5px solid var(--line);border-radius:12px;background:var(--field);color:var(--ink)}
+.pin{letter-spacing:.4em;font-size:20px;max-width:180px}
+input:focus,select:focus{outline:3px solid color-mix(in srgb,var(--gold) 60%,transparent);border-color:var(--gold)}
+.hint{font-size:14px;color:var(--mut);margin:-6px 0 14px}
+.err{color:light-dark(#b3122b,#ff8d9e);font-weight:500;margin:0 0 12px}
+.err:empty{display:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.drawn{display:flex;align-items:center;gap:10px;font-weight:500;margin:0 0 14px}
+.drawn::before{content:"";flex:none;width:12px;height:12px;border-radius:50%;background:var(--ok)}
+details{border-top:1px solid var(--line);padding-top:16px}
+summary{cursor:pointer;font-weight:500;min-height:44px;display:flex;align-items:center}
+.org{display:grid;gap:4px;margin-top:12px}
+footer{max-width:640px;margin:0 auto;padding:16px max(5vw,16px) 48px;font-size:14px;color:var(--mut)}
+.sheet{position:fixed;inset:0;background:rgba(20,5,10,.62);display:grid;place-items:end center;z-index:10}
+.sheet-in{background:var(--card);color:var(--ink);width:min(520px,100%);border-radius:22px 22px 0 0;padding:24px 20px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+@media(min-width:600px){.sheet{place-items:center}.sheet-in{border-radius:22px}}
+.hand{font:700 1.3em/1 Caveat,cursive;color:var(--who)}
+.tag{position:relative;background:var(--paper);border:2px dashed #d9a23a;border-radius:16px;padding:38px 20px 20px;margin:8px 0 16px}
+.tag .hole{position:absolute;top:12px;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--card);border:2px solid #d9a23a}
+.tk{margin:0;color:var(--mut);font-weight:500;text-align:center}
+.who{font:700 clamp(44px,13vw,60px)/1 Caveat,cursive;color:var(--who);margin:4px 0 14px;text-align:center;overflow-wrap:anywhere}
+.ideas{margin:0;padding-left:1.3em}
+.ideas li{margin:8px 0;font-size:17px;overflow-wrap:anywhere}
+.ideas a{color:var(--who);font-weight:500}
+.budget{margin:16px 0 0;font-weight:700;text-align:center}
+.link{background:none;border:0;color:var(--mut);text-decoration:underline;font:15px Rubik,sans-serif;min-height:44px;cursor:pointer;padding:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;z-index:20;font-weight:500}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header class="band top">
+  <h1>Losowanie prezentów</h1>
+  <p class="lead">Najpierw każdy wpisuje 2–3 pomysły na prezent. Gdy wszyscy wpiszą, losujemy – i każdy widzi tylko osobę, którą wylosował, i jej pomysły.</p>
+  <span class="pill" id="pill">Budżet: do 150&nbsp;zł</span>
+  <div class="machine">
+    <svg id="mach" viewBox="0 0 320 300" role="img" aria-label="Maszyna losująca z kulkami uczestników">
+      <defs>
+        <clipPath id="glass"><circle cx="160" cy="128" r="107"/></clipPath>
+        <radialGradient id="gl" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".6" stop-color="#fff" stop-opacity=".07"/><stop offset="1" stop-color="#fff" stop-opacity=".2"/></radialGradient>
+        <radialGradient id="ballg" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fff" stop-opacity=".75"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      </defs>
+      <ellipse cx="160" cy="294" rx="116" ry="6" fill="#000" opacity=".2"/>
+      <rect x="72" y="282" width="176" height="12" rx="6" fill="#b07f22"/>
+      <path d="M128 244 H192 L224 284 H96 Z" fill="#d9a23a"/>
+      <path d="M128 244 H160 V284 H96 Z" fill="#f2c14e" opacity=".6"/>
+      <circle cx="160" cy="128" r="110" fill="url(#gl)"/>
+      <g clip-path="url(#glass)"><g id="balls"></g></g>
+      <circle cx="160" cy="128" r="110" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="3"/>
+      <ellipse cx="160" cy="128" rx="110" ry="20" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="2"/>
+      <path d="M86 72 A92 92 0 0 1 148 36" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="7" stroke-linecap="round"/>
+      <rect x="114" y="236" width="92" height="12" rx="6" fill="#f2c14e"/>
+      <circle cx="50" cy="128" r="7" fill="#f2c14e"/>
+      <circle cx="160" cy="17" r="7" fill="#f2c14e"/>
+      <path d="M270 128 H284 V172" fill="none" stroke="#f2c14e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="284" cy="176" r="10" fill="#d9a23a"/>
+    </svg>
+  </div>
+  <p id="status" class="status">Łączę się…</p>
+  <div id="cta" class="cta"></div>
+</header>
+
+<main>
+  <section class="band" id="osoby">
+    <h2 id="osobyTytul">Stuknij swoje imię</h2>
+    <p class="mut" id="osobyOpis">i wpisz swoje pomysły na prezent.</p>
+    <div id="grid" class="grid"></div>
+  </section>
+
+  <section class="band"><div id="drawBox"></div></section>
+
+  <section class="band">
+    <details>
+      <summary>Dla organizatora</summary>
+      <div class="org">
+        <label>Hasło organizatora<input id="haslo" type="password" autocomplete="off"></label>
+        <label>Ktoś zapomniał PIN-u?<select id="orgOsoba"></select></label>
+        <label>Nowy PIN dla tej osoby<input id="orgPin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off"></label>
+        <p id="orgErr" class="err" role="alert"></p>
+        <div class="row">
+          <button class="btn ghost" data-act="org-pin">Ustaw nowy PIN</button>
+          <button class="btn ghost" data-act="org-cofnij">Cofnij losowanie</button>
+          <button class="btn ghost" data-act="org-wyczysc">Wyczyść wszystko</button>
+        </div>
+      </div>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <p>Nikt nie wylosuje siebie ani swojej drugiej połówki. Pomysły każdej osoby widzi tylko ten, kto ją wylosował.</p>
+</footer>
+
+<div id="sheet" class="sheet" hidden><div class="sheet-in" role="dialog" aria-modal="true"><div id="sheetBody"></div></div></div>
+<div id="toast" class="toast" role="status"></div>
+
+<script>
+{
+const API = '/api/losowanie';
+const COL = ['#f2c14e', '#ffffff', '#8fd3b0', '#f7a8b8', '#ffd98a', '#bfe0ff', '#ffc6a0'];
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const smooth = reduce ? 'auto' : 'smooth';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return 'link'; } };
+const linkify = t => String(t).split(/(https:\/\/[^\s<>"']+)/g).map((p, i) => i % 2 ? `<a href="${esc(p)}" target="_blank" rel="noopener">${esc(host(p))}</a>` : esc(p)).join('');
+const ini = n => String(n).slice(0, 2);
+
+let stan = null, busy = false, toastT = 0, wyczyscKlik = 0;
+
+async function api(body) {
+  const opts = body
+    ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
+    : { cache: 'no-store' };
+  let r;
+  try { r = await fetch(API, opts); } catch (e) { throw new Error('Brak połączenia. Sprawdź internet.'); }
+  let d = {};
+  try { d = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(d.blad || 'Coś poszło nie tak. Spróbuj jeszcze raz.');
+  return d;
+}
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+async function odswiez() {
+  try { stan = await api(); render(); }
+  catch (e) { if (!stan) $('#status').textContent = 'Nie mogę połączyć się z serwerem. Odśwież stronę za chwilę.'; }
+}
+
+/* ---------- maszyna ---------- */
+function slots(n, r) {
+  const cx = 160, cy = 128, R = 105, d = 2 * r + 2, out = [];
+  for (let row = 0; out.length < n && row < 16; row++) {
+    const y = cy + R - r - row * (d - 3);
+    const edge = Math.abs(y - cy) + r * 0.6;
+    const hw = Math.sqrt(Math.max(0, R * R - edge * edge)) - r;
+    if (hw < 0) continue;
+    const k = Math.floor(2 * hw / d) + 1, m = Math.min(k, n - out.length), x0 = cx - (m - 1) * d / 2;
+    for (let j = 0; j < m; j++) out.push([x0 + j * d, y]);
+  }
+  return out;
+}
+function drawBalls() {
+  const os = stan ? stan.osoby : [], r = 18, pts = slots(os.length || 6, r);
+  $('#balls').innerHTML = pts.map((pt, i) => {
+    const o = os[i], c = COL[i % COL.length];
+    return `<g transform="translate(${pt[0].toFixed(1)} ${pt[1].toFixed(1)})" opacity="${o && o.gotowe ? 1 : .32}"><circle r="${r}" fill="${c}"/><circle r="${r}" fill="url(#ballg)"/>${o ? `<text y="5.4" text-anchor="middle" font-size="13" font-weight="700" fill="#3a0d16">${esc(ini(o.imie))}</text>` : ''}</g>`;
+  }).join('');
+}
+
+/* ---------- widok ---------- */
+function render() {
+  drawBalls();
+  if (!stan) return;
+  const os = stan.osoby, gotowe = os.filter(o => o.gotowe), brak = os.filter(o => !o.gotowe), wsz = !brak.length, los = stan.wylosowane;
+  $('#pill').textContent = `Budżet: do ${stan.budzet} zł`;
+  $('#status').textContent = los ? 'Wylosowane! Stuknij swoje imię i wpisz PIN.'
+    : wsz ? 'Wszyscy wpisali pomysły. Można losować!'
+    : `Pomysły wpisało ${gotowe.length} z ${os.length} osób.`;
+
+  $('#cta').innerHTML = los
+    ? '<button class="btn gold big" data-act="go">Sprawdź, kogo masz</button>'
+    : wsz ? '<button class="btn gold big" data-act="losuj">Losuj!</button>'
+    : '<button class="btn gold big" data-act="go">Wpisz swoje pomysły</button>';
+
+  $('#osobyTytul').textContent = 'Stuknij swoje imię';
+  $('#osobyOpis').textContent = los ? 'i wpisz PIN, żeby zobaczyć, kogo masz.' : 'i wpisz swoje pomysły na prezent.';
+  $('#grid').innerHTML = os.map((o, i) => `<button class="person${o.gotowe ? '' : ' waiting'}" data-act="osoba" data-id="${esc(o.id)}">
+      <span class="ball" style="background:${COL[i % COL.length]}">${esc(ini(o.imie))}</span>
+      <span class="pi"><span class="nm">${esc(o.imie)}</span><span class="st${o.gotowe ? ' ok' : ''}">${los ? 'sprawdź, kogo masz' : o.gotowe ? '✓ pomysły wpisane' : 'czeka na pomysły'}</span></span>
+    </button>`).join('');
+
+  let box = '<h2>Losowanie</h2>';
+  if (los) {
+    const at = stan.czasLosowania ? new Date(stan.czasLosowania).toLocaleString('pl-PL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
+    box += `<p class="drawn">Wylosowane${at ? ' ' + esc(at) : ''}.</p><p class="mut">Każdy ma jedną osobę. Nikt nie ma siebie ani swojej drugiej połówki.</p>`;
+  } else if (wsz) {
+    box += '<p class="mut">Wszyscy są gotowi. Naciśnij, a maszyna wylosuje pary.</p><button class="btn gold big" data-act="losuj">Losuj!</button>';
+  } else {
+    box += `<p class="mut">Przycisk „Losuj!” pojawi się, gdy wszyscy wpiszą pomysły.</p><p><strong>Czekamy jeszcze na:</strong> ${brak.map(o => esc(o.imie)).join(', ')}</p>`;
+  }
+  $('#drawBox').innerHTML = box;
+
+  const sel = $('#orgOsoba'), wyb = sel.value;
+  sel.innerHTML = os.map(o => `<option value="${esc(o.id)}">${esc(o.imie)}</option>`).join('');
+  if (wyb) sel.value = wyb;
+}
+
+/* ---------- okienka ---------- */
+function openSheet(html) {
+  $('#sheetBody').innerHTML = html; $('#sheet').hidden = false;
+  const f = $('#sheetBody').querySelector('input,button'); if (f) f.focus();
+}
+function closeSheet() { $('#sheet').hidden = true; $('#sheetBody').innerHTML = ''; odswiez(); }
+const powitanie = o => `<h3>Cześć, <span class="hand">${esc(o.imie)}</span>!</h3>`;
+const pinField = (lbl, id = 'pinIn') => `<label>${lbl}<input id="${id}" class="pin" inputmode="numeric" maxlength="4" autocomplete="off"></label>`;
+const przyciski = (glowny) => `<p class="err" id="sErr" role="alert"></p><div class="row"><button class="btn primary" type="submit">${glowny}</button><button class="btn ghost" type="button" data-act="close">Anuluj</button></div>`;
+
+function onSubmit(fn) {
+  const f = $('#sForm');
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const b = f.querySelector('[type=submit]'); b.disabled = true; $('#sErr').textContent = '';
+    try { await fn(); } catch (er) { const el = $('#sErr'); if (el) el.textContent = er.message; }
+    if (b.isConnected) b.disabled = false;
+  });
+}
+
+function formularz(o, pin, pomysly) {
+  const nowy = !pin;
+  const p = pomysly || [];
+  openSheet(`${powitanie(o)}<p class="mut">Wpisz 2–3 pomysły na prezent do ${stan.budzet} zł. Możesz wkleić link do sklepu.</p>
+    <form id="sForm" novalidate>
+      <label>Pomysł 1<input id="p0" maxlength="300" autocomplete="off" value="${esc(p[0])}" placeholder="np. ciepłe skarpetki w renifery"></label>
+      <label>Pomysł 2<input id="p1" maxlength="300" autocomplete="off" value="${esc(p[1])}" placeholder="np. książka – tytuł albo link"></label>
+      <label>Pomysł 3 (opcjonalnie)<input id="p2" maxlength="300" autocomplete="off" value="${esc(p[2])}" placeholder="np. bon do kina"></label>
+      ${nowy ? pinField('Wymyśl swój PIN (4 cyfry)') + '<p class="hint">Zapamiętaj go! Po losowaniu wpiszesz go, żeby zobaczyć, kogo masz.</p>' : ''}
+      ${przyciski(nowy ? 'Zapisz moje pomysły' : 'Zapisz zmiany')}
+    </form>`);
+  onSubmit(async () => {
+    const lista = [0, 1, 2].map(i => $('#p' + i).value.trim()).filter(Boolean);
+    const kod = nowy ? $('#pinIn').value.trim() : pin;
+    if (lista.length < 2) throw new Error('Wpisz co najmniej 2 pomysły.');
+    if (!/^\d{4}$/.test(kod)) throw new Error('PIN to 4 cyfry.');
+    await api({ akcja: 'zapisz', id: o.id, pin: kod, pomysly: lista });
+    closeSheet(); toast(nowy ? 'Zapisane! Dziękujemy 🎁' : 'Zmiany zapisane.');
+  });
+}
+
+function edycja(o) {
+  openSheet(`${powitanie(o)}<p class="mut">Twoje pomysły są już zapisane. Wpisz PIN, żeby je zmienić.</p>
+    <form id="sForm" novalidate>${pinField('Twój PIN')}${przyciski('Zmień moje pomysły')}</form>`);
+  onSubmit(async () => {
+    const pin = $('#pinIn').value.trim();
+    const d = await api({ akcja: 'moje', id: o.id, pin });
+    formularz(o, pin, d.pomysly);
+  });
+}
+
+function sprawdz(o) {
+  openSheet(`${powitanie(o)}<p class="mut">Sprawdź, czy nikt nie patrzy na ekran, i wpisz swój PIN.</p>
+    <form id="sForm" novalidate>${pinField('Twój PIN')}${przyciski('Pokaż, kogo mam')}</form>
+    <p><button class="link" data-act="edytuj" data-id="${esc(o.id)}">Chcę zmienić swoje pomysły</button></p>`);
+  onSubmit(async () => {
+    const d = await api({ akcja: 'sprawdz', id: o.id, pin: $('#pinIn').value.trim() });
+    openSheet(`<h3><span class="hand">${esc(o.imie)}</span>, oto Twój los</h3>
+      <div class="tag"><span class="hole"></span><p class="tk">Robisz prezent dla</p><p class="who">${esc(d.dla)}</p>
+      <ul class="ideas">${(d.pomysly || []).map(i => `<li>${linkify(i)}</li>`).join('')}</ul>
+      <p class="budget">Budżet: do ${esc(d.budzet)} zł</p></div>
+      <p class="mut">Możesz zrobić zdjęcie ekranu albo wrócić tu w każdej chwili z tym samym PIN-em.</p>
+      <button class="btn primary wide" data-act="close">Ukryj i zamknij</button>`);
+  });
+}
+
+function kliknietaOsoba(id) {
+  const o = stan && stan.osoby.find(x => x.id === id); if (!o) return;
+  if (stan.wylosowane) sprawdz(o);
+  else if (o.gotowe) edycja(o);
+  else formularz(o, null, null);
+}
+
+/* ---------- losowanie ---------- */
+async function losuj() {
+  if (busy) return; busy = true;
+  const m = $('#mach');
+  m.scrollIntoView({ behavior: smooth, block: 'center' });
+  m.classList.remove('spin'); void m.getBoundingClientRect(); m.classList.add('spin');
+  try {
+    await Promise.all([api({ akcja: 'losuj' }), sleep(reduce ? 0 : 1900)]);
+    await odswiez();
+    toast('Wylosowane! Teraz każdy sprawdza, kogo ma.');
+    setTimeout(() => $('#osoby').scrollIntoView({ behavior: smooth, block: 'start' }), 400);
+  } catch (e) { toast(e.message); }
+  m.classList.remove('spin'); busy = false;
+}
+
+/* ---------- organizator ---------- */
+async function org(co, extra) {
+  $('#orgErr').textContent = '';
+  try {
+    await api(Object.assign({ akcja: 'organizator', co, haslo: $('#haslo').value }, extra || {}));
+    return true;
+  } catch (e) { $('#orgErr').textContent = e.message; return false; }
+}
+
+/* ---------- kliknięcia ---------- */
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) { if (e.target === $('#sheet')) closeSheet(); return; }
+  const act = b.dataset.act;
+  if (act === 'close') closeSheet();
+  else if (act === 'go') $('#osoby').scrollIntoView({ behavior: smooth, block: 'start' });
+  else if (act === 'osoba') kliknietaOsoba(b.dataset.id);
+  else if (act === 'edytuj') { const o = stan.osoby.find(x => x.id === b.dataset.id); if (o) edycja(o); }
+  else if (act === 'losuj') losuj();
+  else if (act === 'org-pin') {
+    if (await org('nowyPin', { id: $('#orgOsoba').value, pin: $('#orgPin').value.trim() })) { $('#orgPin').value = ''; toast('Nowy PIN ustawiony.'); }
+  }
+  else if (act === 'org-cofnij') {
+    if (await org('cofnijLosowanie')) { toast('Losowanie cofnięte. Można losować od nowa.'); odswiez(); }
+  }
+  else if (act === 'org-wyczysc') {
+    if (Date.now() - wyczyscKlik > 5000) { wyczyscKlik = Date.now(); b.textContent = 'Na pewno? Kliknij jeszcze raz'; return; }
+    wyczyscKlik = 0; b.textContent = 'Wyczyść wszystko';
+    if (await org('wyczysc')) { toast('Wszystko wyczyszczone.'); odswiez(); }
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
+
+render();
+odswiez();
+setInterval(() => { if (!document.hidden && $('#sheet').hidden && !busy) odswiez(); }, 15000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) odswiez(); });
+}
+</script>
+</body>
+</html>
